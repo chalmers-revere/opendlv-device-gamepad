@@ -1,0 +1,6 @@
+// This message is a legacy one to support controlling Snowfox and Rhino.
+message opendlv.proxy.ActuationRequest [id = 160] {
+    float acceleration [id = 1];
+    float steering [id = 2];
+    bool isValid [id = 3];
+}
