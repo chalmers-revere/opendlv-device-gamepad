@@ -40,6 +40,7 @@ a PS4 Controller, simply start it as follows:
 
 ```
 docker run --rm -ti --init --net=host --device /dev/input/js0 chalmersrevere/opendlv-device-gamepad-multi:v0.0.8 --device=/dev/input/js0 --axis_leftright=0 --axis_updown=5 --freq=100 --acc_min=0 --acc_max=50 --dec_min=0 --dec_max=-10 --steering_min=-10 --steering_max=10 --cid=111 --verbose
+```
 
 ## Build from sources on the example of Ubuntu 16.04 LTS
 To build this software, you need cmake, C++14 or newer, libx11-dev, and make.
