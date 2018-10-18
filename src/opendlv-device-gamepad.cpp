@@ -70,6 +70,9 @@ int32_t main(int32_t argc, char **argv) {
         const float STEERING_MIN = std::stof(commandlineArguments["steering_min"]);
         const float STEERING_MAX = std::stof(commandlineArguments["steering_max"]);
 
+        float const STEERING_MAX_RATE = (commandlineArguments.count("steering_max_rate") != 0) ? std::stof(commandlineArguments["steering_max_rate"]) : -1.0f;
+        float const TS = 1.0f / FREQ;
+
         int gamepadDevice;
         if ( -1 == (gamepadDevice = ::open(DEVICE.c_str(), O_RDONLY)) ) {
             std::cerr << "[opendlv-device-gamepad]: Could not open device: " << DEVICE << ", error: " << errno << ": " << strerror(errno) << std::endl;
@@ -95,6 +98,8 @@ int32_t main(int32_t argc, char **argv) {
             std::mutex valuesMutex;
             float acceleration{0};
             float steering{0};
+            float targetSteering{0};
+            float prevSteering{0};
             bool hasError{false};
 
             // Thread to read values.
@@ -109,9 +114,11 @@ int32_t main(int32_t argc, char **argv) {
                                               &DECELERATION_MAX,
                                               &STEERING_MIN,
                                               &STEERING_MAX,
+                                              &STEERING_MAX_RATE,
                                               &valuesMutex,
                                               &acceleration,
                                               &steering,
+                                              &targetSteering,
                                               &hasError,
                                               &gamepadDevice]() {
                 struct timeval timeout {};
@@ -160,6 +167,10 @@ int32_t main(int32_t argc, char **argv) {
                                         // Clamp value to avoid showing "-0" (just "0" looks better imo)
                                         if (steering < 0.001f && steering >-0.001f) {
                                             steering = 0;
+                                        }
+
+                                        if (STEERING_MAX_RATE > 0.0f) {
+                                            targetSteering = steering;
                                         }
                                     }
                                     // no else-if as many of these events can occur simultaneously
@@ -211,14 +222,31 @@ int32_t main(int32_t argc, char **argv) {
             cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
             if (od4.isRunning()) {
                 od4.timeTrigger(FREQ, [&VERBOSE,
+                                       &STEERING_MAX_RATE,
+                                       &TS,
                                        &valuesMutex,
                                        &acceleration,
                                        &steering,
+                                       &prevSteering,
+                                       &targetSteering,
                                        &hasError,
                                        &ar,
                                        &od4](){
                     std::lock_guard<std::mutex> lck(valuesMutex);
+
+                    if (STEERING_MAX_RATE > 0.0f) {
+                        float inc = TS * STEERING_MAX_RATE;
+                        float steeringRate = (steering - prevSteering) / TS;
+                        if (steeringRate > STEERING_MAX_RATE) {
+                            steering = prevSteering + inc;
+                        } else if (steeringRate < -STEERING_MAX_RATE) {
+                            steering = prevSteering - inc;
+                        }
+                    }
+
+                    prevSteering = steering;
                     ar.acceleration(acceleration).steering(steering).isValid(!hasError);
+
                     if (VERBOSE) {
                         std::stringstream buffer;
                         ar.accept([](uint32_t, const std::string &, const std::string &) {},
@@ -227,6 +255,10 @@ int32_t main(int32_t argc, char **argv) {
                         std::cout << buffer.str() << std::endl;
                     }
                     od4.send(ar);
+
+                    if (STEERING_MAX_RATE > 0.0f) {
+                        steering = targetSteering;
+                    }
 
                     // Determine whether to continue or not.
                     return !hasError;
