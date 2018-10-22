@@ -49,8 +49,8 @@ int32_t main(int32_t argc, char **argv) {
          (0 == commandlineArguments.count("steering_min")) ||
          (0 == commandlineArguments.count("steering_max")) ) {
         std::cerr << argv[0] << " interfaces with the given PS3 controller to emit ActuationRequest messages to an OD4Session." << std::endl;
-        std::cerr << "Usage:   " << argv[0] << " --device=<PS3 controller device> --freq=<frequency in Hz>--acc_min=<minimum acceleration> --acc_max=<maximum acceleration> --dec_min=<minimum deceleration> --dec_max=<maximum deceleration> --steering_min=<minimum steering> --steering_max=<maximum steering> --cid=<OpenDaVINCI session> [--ps4] [--verbose]" << std::endl;
-        std::cerr << "Example: " << argv[0] << " --device=/dev/input/js0 --axis_leftright=0 --axis_updown=4 --freq=100 --acc_min=0 --acc_max=50 --dec_min=0 --dec_max=-10 --steering_min=-10 --steering_max=10 --cid=111" << std::endl;
+        std::cerr << "Usage:   " << argv[0] << " --device=<PS3 controller device> --freq=<frequency in Hz>--acc_min=<minimum acceleration> --acc_max=<maximum acceleration> --dec_min=<minimum deceleration> --dec_max=<maximum deceleration> --steering_min=<minimum steering> --steering_max=<maximum steering> [--steering_max_rate=5.0] --cid=<OpenDaVINCI session> [--ps4] [--verbose]" << std::endl;
+        std::cerr << "Example: " << argv[0] << " --device=/dev/input/js0 --axis_leftright=0 --axis_updown=4 --freq=100 --acc_min=0 --acc_max=50 --dec_min=0 --dec_max=-10 --steering_min=-10 --steering_max=10 --steering_max_rate=5.0 --cid=111" << std::endl;
         retCode = 1;
     }
     else {
