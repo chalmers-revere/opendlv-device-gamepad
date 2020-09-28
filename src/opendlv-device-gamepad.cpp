@@ -81,6 +81,7 @@ int32_t main(int32_t argc, char **argv) {
       std::mutex valuesMutex;
       float left{0};
       float right{0};
+      int32_t state{-1};
       bool hasError{false};
 
       // Thread to read values.
@@ -92,6 +93,7 @@ int32_t main(int32_t argc, char **argv) {
           &valuesMutex,
           &left,
           &right,
+          &state,
           &hasError,
           &gamepadDevice]() {
           struct timeval timeout {};
@@ -129,7 +131,12 @@ int32_t main(int32_t argc, char **argv) {
                       break;
                     }
                   case JS_EVENT_BUTTON:
-                    break;
+                    {
+                      if (js.value == 1) {
+                        state = js.number;
+                      }
+                      break;
+                    }
                   case JS_EVENT_INIT:
                     break;
                   default:
@@ -146,17 +153,23 @@ int32_t main(int32_t argc, char **argv) {
 
       cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
       if (od4.isRunning()) {
-        od4.timeTrigger(FREQ, [&VERBOSE, &valuesMutex, &left, &right, &hasError, &od4](){
+        od4.timeTrigger(FREQ, [&VERBOSE, &valuesMutex, &left, &right, &state, &hasError, &od4](){
             std::lock_guard<std::mutex> lck(valuesMutex);
 
 
-            opendlv::proxy::PedalPositionRequest pprl;
-            pprl.position(left);
-            od4.send(pprl, cluon::time::now(), 0);
+            if (state == 0) {
+              opendlv::proxy::PedalPositionRequest pprl;
+              pprl.position(left);
+              od4.send(pprl, cluon::time::now(), 0);
 
-            opendlv::proxy::PedalPositionRequest pprr;
-            pprr.position(right);
-            od4.send(pprr, cluon::time::now(), 10);
+              opendlv::proxy::PedalPositionRequest pprr;
+              pprr.position(right);
+              od4.send(pprr, cluon::time::now(), 10);
+            }
+            
+            opendlv::proxy::SwitchStateRequest ssr;
+            ssr.state(state);
+            od4.send(ssr, cluon::time::now(), 99);
 
             return !hasError;
             });
@@ -165,6 +178,10 @@ int32_t main(int32_t argc, char **argv) {
         ppr.position(0.0);
         od4.send(ppr, cluon::time::now(), 0);
         od4.send(ppr, cluon::time::now(), 10);
+
+        opendlv::proxy::SwitchStateRequest ssr;
+        ssr.state(-1);
+        od4.send(ssr, cluon::time::now(), 99);
       }
 
       {

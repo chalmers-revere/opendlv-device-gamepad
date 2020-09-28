@@ -20,7 +20,7 @@ project(opendlv-device-gamepad)
 ################################################################################
 # Defining the relevant versions of libcluon and the proprietary actuation request.
 set(OPENDLV_STANDARD_MESSAGE_SET opendlv-standard-message-set-v0.9.10.odvd)
-set(CLUON_COMPLETE cluon-complete-v0.0.113.hpp)
+set(CLUON_COMPLETE cluon-complete-v0.0.136.hpp)
 
 ################################################################################
 # This project requires C++14 or newer.
